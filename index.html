@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>單字卡片學習</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: linear-gradient(135deg, #0f172a, #1e293b);
+      --panel: rgba(15, 23, 42, 0.78);
+      --card: #ffffff;
+      --text: #0f172a;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: white;
+    }
+
+    .app {
+      width: min(92vw, 440px);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 1.6rem;
+      letter-spacing: 0.04em;
+    }
+
+    p.subtitle {
+      margin: 0 0 24px;
+      color: #dbeafe;
+      font-size: 0.98rem;
+    }
+
+    .scene {
+      width: 100%;
+      height: 320px;
+      perspective: 1200px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.7s ease;
+      cursor: pointer;
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      backface-visibility: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .face.front {
+      background: linear-gradient(145deg, #ffffff, #e0f2fe);
+      color: var(--text);
+    }
+
+    .face.back {
+      background: linear-gradient(145deg, #1d4ed8, #7c3aed);
+      transform: rotateY(180deg);
+      color: #eff6ff;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: rgba(56, 189, 248, 0.16);
+      color: #0c4a6e;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .word {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      font-size: 0.95rem;
+      color: #475569;
+    }
+
+    .translation {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .tip {
+      color: #dbeafe;
+      font-size: 0.95rem;
+      opacity: 0.92;
+    }
+
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(56, 189, 248, 0.25);
+      transition: transform 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .small {
+      font-size: 0.88rem;
+      color: #bfdbfe;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>單字卡片練習</h1>
+    <p class="subtitle">點擊卡片即可翻面，學習英文單字。</p>
+
+    <section class="scene" aria-label="單字卡片">
+      <article id="flashCard" class="card" tabindex="0" aria-label="可點擊翻面單字卡片">
+        <div class="face front">
+          <div>
+            <span class="badge">英文</span>
+            <div id="wordText" class="word">Hello</div>
+            <div class="hint">點我翻面看中文意思</div>
+          </div>
+        </div>
+        <div class="face back">
+          <div>
+            <span class="badge">中文</span>
+            <div id="translationText" class="translation">你好</div>
+            <div class="tip">再點一次回到英文</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="controls">
+      <button id="nextBtn" type="button">下一個單字</button>
+      <button id="resetBtn" type="button">重置卡片</button>
+    </div>
+    <p class="small">目前包含 5 個常用單字，點擊卡片或按鈕即可切換。</p>
+  </main>
+
+  <script>
+    const words = [
+      { english: 'Hello', chinese: '你好' },
+      { english: 'World', chinese: '世界' },
+      { english: 'Study', chinese: '學習' },
+      { english: 'Happy', chinese: '開心的' },
+      { english: 'Friend', chinese: '朋友' }
+    ];
+
+    const card = document.getElementById('flashCard');
+    const wordText = document.getElementById('wordText');
+    const translationText = document.getElementById('translationText');
+    const nextBtn = document.getElementById('nextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let currentIndex = 0;
+
+    function showWord(index) {
+      currentIndex = index;
+      wordText.textContent = words[index].english;
+      translationText.textContent = words[index].chinese;
+      card.classList.remove('flipped');
+    }
+
+    function nextWord() {
+      showWord((currentIndex + 1) % words.length);
+    }
+
+    card.addEventListener('click', () => {
+      card.classList.toggle('flipped');
+    });
+
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        card.classList.toggle('flipped');
+      }
+    });
+
+    nextBtn.addEventListener('click', nextWord);
+    resetBtn.addEventListener('click', () => showWord(0));
+
+    showWord(0);
+  </script>
+</body>
+</html>
